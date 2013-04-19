@@ -3,7 +3,7 @@
  */
 
 var express = require('express'), 
-	page = require('./lib'), 
+	page = require('./app'), 
 	http = require('http'),
 	path = require('path'),
 	cons = require("consolidate"),
