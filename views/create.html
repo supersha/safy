@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if urlData.cid %}编辑{% else %}创建{% endif %}单侧{% endblock %}
+
+{% block head_style %}
+<link rel="stylesheet" href="/css/introjs.min.css">
+<style>
+#case-form{font-size:13px;}
+#case-form input,#case-form p{margin-bottom:5px;}
+
+.sub{text-align: center;margin-top:10px;}
+.sub a{margin-left:15px;}
+
+label{display:inline-block;width:100px;}
+
+.editor-box{position: relative;height:420px;width:817px;background: #fff;}
+.editor-box #editor{line-height:22px;height:420px;width:817px;font-size:12px;-webkit-border-radius:4px;-moz-border-radius:4px;-o-border-radius:4px;border-radius: 4px;-o-box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);-moz-box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);-webkit-box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);border:1px solid #ccc;border-bottom-right-radius: 0px;}
+
+.embel-link{width:819px;}
+.embel-link span{background:#eee;float:right;font-size: 13px;display: inline-block;padding: 3px 10px;background: #f4f4f4;border: 1px solid #ccc;border-top: none;border-bottom-left-radius: 4px;border-bottom-right-radius: 4px;text-shadow: 0px 1px 0px rgba(255, 255, 255, 1);box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);position: relative;top: -9px;position:relative;}
+.embel-link .safy-api{margin-right:25px;}
+.embel-link .code-setting{display:inline-block;height:23px;width:22px;background:url(/img/setting-ico.png);position:absolute;top:1px;right:5px;}
+.embel-link .code-setting:hover{background-position:0 23px;}
+
+.embel-link .popover.top{left:-6px!important;width:180px;-webkit-border-radius:0;border-radius:0;}
+.embel-link .popover.top .arrow{left:93%;}
+.embel-link .popover-title{padding:4px 14px;}
+.embel-link .popover-content{padding:0;}
+.embel-link .popover-content p{margin:0!important;}
+.embel-link .popover-content a{display:block;padding:4px 8px;font-size:12px;}
+.embel-link .popover-content a:hover{text-decoration:none;background:#d9edf7;}
+
+.advanced,#get_record_btn,#aladdin-tpl{display:none;}
+
+.advance-btn a{width:295px;}
+
+.code-container-span{margin-left:0;}
+.sideleft-span{width:350px;}
+.sideleft-span .popover-title{display:none;}
+
+div.grippie {background:#f9f9f9 url(/img/grippid.png) no-repeat scroll center 2px;border-color:#DDDDDD;border-style:solid;border-width:0pt 1px 1px;cursor:s-resize;height:9px;overflow:hidden;border-radius:3px;border-top-left-radius:0;}
+
+/* ace autocomplete */
+#ace-autocomplete-dialog{position:absolute;top:0;left:0;min-width:200px;max-height:196px;overflow:hidden;font-size:12px;display:none;box-shadow:0  0 5px 1px rgba(0, 0, 0, 0.3);background:#E8E8E8;z-index:1000;font-family:'Monaco', 'Menlo', 'Ubuntu Mono', 'Droid Sans Mono', 'Consolas', monospace;}
+#ace-autocomplete-dialog ul{list-style:none;margin:0;padding:0;}
+#ace-autocomplete-dialog li{padding:2px 8px;margin:0;background:#fff;border-bottom:1px solid rgba(0, 0, 0, 0.1);border-top:1px solid rgba(255, 255, 255, 0.8);cursor:pointer;}
+#ace-autocomplete-dialog .autocomplete-selected{background-image:-webkit-linear-gradient(bottom,#337CBC 0%, #4091D8 100%);background-image:-moz-linear-gradient(bottom,#337CBC 0%, #4091D8 100%);background-image:linear-gradient(bottom,#337CBC 0%, #4091D8 100%);color:lightblue;}
+#ace-autocomplete-dialog .autocomplete-selected strong{color:#fff;}
+</style>
+{% endblock %}
+
+
+{% block head %}{% include 'common/head.html' %}{% endblock %}
+{% block foot %}{% include 'common/foot.html' %}{% endblock %}
+
+
+{% block content %}
+<div class="container">
+
+<div class="alert">
+   <span class="alert-content"></span>
+</div>
+
+
+<form name="create-case" id="case-form" method="post" target="_blank" action="/tool/preview">
+<div class="row show-grid case-row">
+<div class="span4 sideleft-span">
+
+<input type="hidden" name="sw" id="sw" value="{{ caseData['switch'] }}">
+<input type="hidden" name="cid" id="cid" value="{{ caseData.id }}">
+<input type="hidden" name="uid" id="uid" value="{{ passport.uid }}">
+
+
+<p data-step="1" data-intro="这里填写单侧标题描述" data-position="right"><label for="title">标题描述:</label><input autocomplete="off" value="{{ caseData.title }}" placeholder="title" type="text" name="title" id="title" class="txt"></p>
+
+<p style="position:relative;" data-step="2" data-intro="这里填写测试页面的URL，如果是URL测试的单侧，<br>必须要填写；通用测试和阿拉丁的可以不用填写" data-position="bottom"><label for="url">单测页面:</label><input autocomplete="off" placeholder="url" value="{{ caseData.url }}" type="text" name="url" id="url" class="txt"> <a href='javascript:void(0)' id="get_record_btn"> <i class='icon-circle-arrow-right'></i></a></p>
+
+<p data-step="4" data-intro="这里选择测试平台，一般输入URL后能够自动识别平台" data-position="right"><label>测试平台:</label><select id="device" name="device">
+<option {% if caseData.device == "1" %}selected='selected'{% endif %} value="1">PC</option>
+<option {% if caseData.device == "2" %}selected='selected'{% endif %} value="2">PAD</option>
+<option {% if caseData.device == "3" %}selected='selected'{% endif %} value="3">Phone</option>
+</select>
+</p>
+
+<p data-step="5" data-intro="这里选择单侧的类型，比如通用测试、URL关联等" data-position="right"><label>单测类型:</label><select id="type" name="type">
+<option {% if caseData.type == "1" %}selected='selected'{% endif %} value="1">URL关联</option>
+<option {% if caseData.type == "2" %}selected='selected'{% endif %} value="2">通用单测</option>
+</select>
+</p>
+
+<p data-step="6" data-intro="这里选择单侧代码插入到页面的位置，这个根据测试代码的需要自由选择，默认Body后面" data-position="right"><label>代码位置:</label><select id="position" name="position">
+<option {% if caseData.position == "2" %}selected='selected'{% endif %} value="2">Body后</option>
+<option {% if caseData.position == "3" %}selected='selected'{% endif %} value="3">Body前</option></p>
+<option {% if caseData.position == "4" %}selected='selected'{% endif %} value="4">Head后</option></p>
+<option {% if caseData.position == "1" %}selected='selected'{% endif %} value="1">Head前</option>
+</select>
+</p>
+
+<p data-step="10" data-intro="这里选择页面的编码类型，现在有UTF-8和GBK，默认UTF-8吧" data-position="right"><label>页面编码:</label><select id="charset" name="charset">
+<option {% if caseData.charset == "1" %}selected='selected'{% endif %} value="1">UTF-8</option>
+<option {% if caseData.charset == "2" %}selected='selected'{% endif %} value="2">GBK</option>
+</select>
+</p>
+
+</div>
+
+<div class="span6 code-container-span">
+<div class="editor-box resizable" data-step="11" data-intro="这里就是输入单侧代码的地方，提供了有各种单侧API以及工具供使用，API请访问“<a href='/api' target='_blank'>Safy API</a>”查看文档。这里的单侧代码使用的都是JS代码，可以写原生的JS代码去验证指定模板名的阿拉丁或者页面的功能和效果，也可以通过录制工具(在“单侧页面”中输入URL，即可看到一个点击按钮icon，就可以使用)生成的代码直接运行" data-position="bottom">
+	<div id="editor"></div>
+</div>
+<p class="embel-link">
+	<span><a href="/api" class="safy-api hint hint--left" data-hint="Safy提供的编写单侧代码的API文档" target="_blank">Safy Case API接口文档</a> <a href='#' class='code-setting' data-toggle="popover" id="code-setting"></a></span>
+</p>
+</div>
+</div>
+
+<p class="sub"><button class="btn btn-primary btn-large" type="button" id="btn-create">{% if urlData.cid %}保存{% else %}提交{% endif %}单测</button>{% if urlData.cid %} <button type="button" id="cancel" class="btn">取消</button>{% endif %}<a href='###' class="btn btn-info" id="preview">预览单测</a></p>
+</form>
+</div>
+
+<textarea id="case_code_textarea" style="display:none;">{% if caseData.code %}{{ caseData.code }}{% else %}/** 在这里输入单测测试代码
+ * 
+ * 单侧代码有封装的API，以及各种工具供使用，
+ * 当然也可以写原生的JavaScript代码去验证指定URL页面的测试代码；
+ * API的说明文档在右下角有文档链接。
+ */
+{% endif %}</textarea>
+{% endblock %}
+
+
+{% block foot_script %}
+
+<script src="/ace/ace.js"></script>
+<script src="/js/ace-autocomplete.js"></script>
+<script src="/js/jquery.textarearesizer.compressed.js"></script>
+<script src="/js/intro.min.js"></script>
+<script>
+$(document).ready(function() {
+	$('.resizable:not(.processed)').TextAreaResizer();
+});
+</script>
+<script>
+    var editor = ace.edit("editor");
+    //editor.setTheme("ace/theme/monokai");
+    editor.setValue($("#case_code_textarea").val() || "");
+    editor.setShowPrintMargin(false);
+    editor.getSession().setMode("ace/mode/javascript");
+    editor.clearSelection();
+    editor.getSession().setUseWrapMode(true);
+</script>
+
+<script>
+var isEdit = {{ isEdit }};
+
+
+var editorInitailizeCode = editor.getValue();
+
+
+$("#code-setting").popover({
+	title : "操作",
+	placement : "top",
+	trigger : "click",
+	html : true,
+	content : "<a id='recover-code' onclick='recoverCode()' href='javascript:void(0)'>从最近一次保存的代码中恢复</a>"
+});
+
+$("#code-setting").click(function(e){ e.preventDefault();});
+
+
+function recoverCode(e){
+	if(window.localStorage){
+		if(window.localStorage['case_code_backup']){
+			editor.setValue(window.localStorage["case_code_backup"]);
+			editor.clearSelection();
+			$("#ace-autocomplete-dialog").hide();
+			monitor.util.showSuccessAlert("代码已恢复");
+		}else{
+			monitor.util.showFailAlert("本地备份代码为空");
+		}
+		
+	}
+	$("#code-setting").popover("hide");
+	return false;
+	//e.preventDefault();
+};
+
+
+function backupCode(){
+	var date = new Date(),value = editor.getValue();
+	if(window.localStorage){
+		if(value === editorInitailizeCode || value === window.localStorage['case_code_backup']){ return; }
+		window.localStorage['case_code_backup'] = value;
+		monitor.util.showSuccessAlert("代码自动备份于:" + [date.getFullYear(),date.getMonth() + 1,
+			date.getDate()].join("-") + " " +  [date.getHours(),date.getMinutes(),date.getSeconds()].join(":"));
+	}	
+}
+
+
+//15s自动保存一次代码
+setInterval(function(){
+	backupCode();
+},1000 * 15);
+
+
+$(window).unload(function(){var n = 3000; backupCode(); while(n--){};});
+
+
+if(window.localStorage){
+	if(!window.localStorage["isIntroed"]){
+		var intro = introJs();
+		intro.start();
+		intro.oncomplete(function(){
+			window.location.reload(true);
+		});
+		window.localStorage["isIntroed"] = 1;
+	}
+}
+
+
+$("#url").on("input",function(){
+	var url = $.trim($(this).val());
+
+	if(!url){
+		$("#get_record_btn").hide();
+		return;
+	}
+
+	if(!monitor.util.isURL(url)){return;}
+
+	$("#get_record_btn").show();
+});
+
+
+$(window).load(function(){
+	if($("#url").val()){
+		$("#get_record_btn").show();
+	}
+});
+
+$("#get_record_btn").popover({
+	animation : true,
+	placement : "right",
+	trigger : "click",
+	title : "选择获取JSON的方式",
+	html : true,
+	content : "<a href='#' target='_blank' onmousedown='return jumpToRecorder(this);' onclick='return hidePopover();' class='btn btn-small hint hint--top' data-hint='按ESC键退出，并自动获取到JSON内容'>录制页面行为</a> <a href='#' target='_blank' onmousedown='return jumpToSelector(this);' onclick='return hidePopover();' class='btn btn-small hint hint--top' data-hint='获取页面DOM元素的Selector'>获取Selector</a>"
+});
+
+
+function hidePopover(){
+	$('#get_record_btn').popover('hide');
+}
+
+function jumpToRecorder(elem){
+	var url = $.trim($("#url").val());
+
+	var link = "/tool/recorder?url=" + encodeURIComponent(url) + "&t=" + (+new Date());
+
+	$(elem).attr("href",link);	
+}
+
+function jumpToSelector(elem){
+	var url = $.trim($("#url").val());
+
+	var link = "/tool/selector?url=" + encodeURIComponent(url) + "&t=" + (+new Date());
+
+	$(elem).attr("href",link);	
+}
+
+
+{% if isEdit %}
+$("#cancel").on("click",function(){
+	window.history.back();
+});
+{% endif %}
+
+
+$("#preview").on("click",function(event){
+	var $form = $("#case-form");
+	var value = $.trim(editor.getValue());
+	//检测case code是否存在语法错误
+	/*if($(".ace_error").size()){
+		monitor.util.showFailAlert("单测代码存在语法错误，请检查代码");
+		return;
+	}*/
+
+	if(!$.trim($("#url").val()) && ($("#case_type").val() === "1")){
+		monitor.util.showFailAlert("URL不能为空");
+		return;
+	}
+
+	if($("#type").val() === "2" && !value){
+		monitor.util.showFailAlert("代码不能为空");
+		return;
+	}
+	
+	$("<textarea name='code' id='code'></textarea>").val(value).appendTo($form);
+	$form.submit();
+	$("#code").remove();
+	event.preventDefault();
+});
+
+
+$("#btn-create").on("click",function(){
+
+
+	//检测case code是否存在语法错误
+	/*if($(".ace_error").size()){
+		monitor.util.showFailAlert("单测代码存在语法错误，请检查代码");
+		return;
+	}*/
+
+
+	var title = $.trim($("#title").val()),
+		url = $.trim($("#url").val()),
+		charset = $("#charset").val(),
+		type = $("#type").val(),
+		uid =$.trim($("#uid").val()),
+		position = $("#position").val(),
+		code = editor.getValue(),
+		cid = $.trim($("#cid").val()),
+		device = $("#device").val(),
+		sw = $("#switch").val() || 0;
+
+	//var $textarea = $("<textarea></textarea>").val(case_code);
+	//case_code = $textarea.val();
+
+	if(!title){
+		monitor.util.showFailAlert("请填写完整的单测内容:标题");
+		return;
+	}
+
+	if(type === "1" && !url){
+		monitor.util.showFailAlert("单测页面URL不能为空");
+		return;
+	}
+
+
+	if(url && !monitor.util.isURL(url)){
+		monitor.util.showFailAlert("URL格式不正确");
+		return;
+	}
+
+	var api = "/api/add_case.json";
+	// update case
+	if(isEdit){
+		api = "/api/update_case.json";
+	}
+
+	//将全部的<符号，两边加上空格，避免代码编辑状态下出现html标签错乱
+	code = code.replace("/</g"," < ");
+
+
+
+	$.ajax({
+		type : "POST",
+		dataType : "json",
+		url : api,
+		data: {
+			cid : cid,
+			title : title,
+			url : url,
+			charset : charset,
+			type : type,
+			uid : uid,
+			position : position,
+			code : code,
+			device : device,
+			sw : sw
+		},
+		success : function(data){
+			if(data.status === 0){
+				if(isEdit){
+					monitor.util.showSuccessAlert("编辑成功，正在往回跳...",function(){
+						window.history.back();
+					});
+				}else{
+					monitor.util.showSuccessAlert("创建单测成功...",function(){
+						window.location.reload(true);
+					});
+				}
+			}else{
+				monitor.util.showFailAlert(data.error);
+			}
+		}
+	});
+});
+
+
+//初始化autocomplete dialog的各项功能
+var autocomplete = new AceAutoComplete(editor,{
+    items : 10
+});
+</script>
+
+{% endblock %}

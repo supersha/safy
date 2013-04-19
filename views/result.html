@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}测试结果{% endblock %}
+
+{% block head_style %}
+<style>	
+.typeahead{z-index: 1050;}
+.send-content{height:100px;}
+</style>
+{% endblock %}
+
+{% block head %}{% include 'common/head.html' %}{% endblock %}
+
+{% block foot %}{% include 'common/foot.html' %}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+<div class="alert">
+   <span class="alert-content"></span>
+</div>
+
+<div class="lists"></div>
+<div class="pagers"></div>
+
+<div id="noteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">填写原因分析</h3>
+  </div>
+  <div class="modal-body">
+    <p><label for="note-content"><textarea placeholder="原因分析内容" id="note-content" class="span5 send-content"></textarea></label></p>
+    <p><button class="btn btn-small btn-primary" id="send-note">提交内容</button></p>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block foot_script %}
+<script>
+var loginUser = "{{ passport.user }}";
+var loginUserID = "{{ passport.uid }}";
+
+
+var pageNums = 10;
+
+function buildPagers(pn,json){
+	var total = json.total;
+	var pagerHtml = [];
+	var pagerNum = Math.floor(total/pageNums) + Math.ceil((total % pageNums)/pageNums);
+	var pageCount;
+	var loop;
+			
+	if(pagerNum <= 1){return;}
+	
+	pn = pn || 1;
+	
+	if(pn > 1){
+		pagerHtml.push('<li><a href="#" data-pn="' + (pn - 1) + '">«</a></li>');
+	}else{
+		pagerHtml.push('<li class="disabled"><a href="#">«</a></li>');
+	}
+	
+	if(pn < 7){
+		for(var i=1;i<pn;i++){
+			pagerHtml.push('<li><a href="#" data-pn="' + i + '">' + i + '</a></li>');
+		}
+	}else{
+		pagerHtml.push('<li><a href="#" data-pn="1">1</a></li>');
+		pagerHtml.push('<li class="disabled"><a href="#">...</a></li>');
+		
+		for(var i=pn-3;i<pn;i++){
+			pagerHtml.push('<li><a href="#" data-pn="' + i + '">' + i + "</a></li>");
+		}
+	}
+	
+	pagerHtml.push('<li class="active"><a href="###">' + pn + "</a></li>");
+	
+	if(pn < 7){
+		for(var i=1;i <= (10-pn);i++){
+			pageCount = pn + i;
+			if((pageCount - 1) < pagerNum){
+				pagerHtml.push('<li><a href="#" data-pn="' + pageCount + '">' + pageCount + "</a></li>");
+			}
+		}
+	}else{
+		if((pagerNum - pn) >= 4){
+			loop = 4;
+		}else{
+			loop = pagerNum - pn;
+		}
+		
+		for(var i=1;i<=loop;i++){
+			pageCount = pn + i;
+			pagerHtml.push('<li><a href="#" data-pn="' + pageCount + '">' + pageCount + "</a></li>");
+		}
+	}
+	
+	if(pn < pagerNum){
+		pagerHtml.push('<li><a href="#" data-pn="' + (pn + 1) + '">»</a></li>');
+	}else{
+		pagerHtml.push('<li class="disabled"><a href="#">»</a></li>');
+	}
+	
+	$(".pagers").html('<div class="pagination pagination-centered"><ul>' + pagerHtml.join("") + '</ul></div>');
+}
+
+var  errorType = {
+	"error" : "error",
+	"warn" : "warning",
+	"log" : "info",
+	"sms" : "error",
+	"mail" : "error"
+}
+
+
+var eventTypeTitle = {
+	"error" : "错误",
+	"warn" : "警告",
+	"log" : "日志",
+	"sms" : "短信",
+	"mail" : "邮件"
+}
+
+var errorStatus = { "0" : "<span class='text-error'>运行</span>" ,"1" : "<span class='text-success'>已修复</span>","2" : "<span class='text-warning'>忽略</span>"};
+
+var currentErrorID = -1;
+
+function buildCaseTable(json){
+	var data = json.data;
+	var tableHtml = ["<tr><th>#</th><th>页面</th><th>错误信息</th><th>类型</th><th>浏览器信息</th><th>状态</th><th>发生时间</th><th>操作</th></tr>"];
+	var title,url,type,error_type,deleteStr,note;
+	for(var i =0;i<data.length;i++){
+		url = data[i].url ? data[i].url : data[i].error_title;
+		title = data[i].title ? data[i].title : url;
+		type = "<a href='#' class='done'>已修复</a> ";
+		deleteStr = "<a href='#' class='delete'>忽略</a> ";
+		note = "<a href='#' class='hint hint--left " + (data[i].note ? "noted" : "note") + "' data-hint='" + (data[i].note ? "查看原因分析" : "填写原因分析") + "'>原因</a>";
+		error_type = errorType[data[i].type];
+
+		if(data[i].status == 1 || data[i].status == 2){
+			type = "已修复 ";
+			deleteStr = "忽略 ";
+			error_type = "success";
+		}
+		if(data[i].status == 2){
+			deleteStr = "忽略 ";
+		}
+
+		tableHtml.push("<tr class='" + error_type + "'><td>" + data[i].id + "</td><td>" + (url ? ("<a href='" + url + "' target='_blank' title='" + title + "'>" + title + "</a>") : title) + "</td><td style='max-width:400px;word-break:break-all;'>" + data[i].content + "</td><td style='width:40px;'>" + eventTypeTitle[data[i].type] + "</td><td style='max-width:300px;word-break:break-all;'>" + data[i].useragent + "</td><td style='width:40px;'>" + errorStatus[data[i].status] + "</td><td style='width:130px;'>" + data[i].adddate + "</td><td style='width:100px;' data-eid='" + data[i].id + "'>" + deleteStr + type + note + "</td></tr>");
+	}
+	
+	$(".lists").html("<table class='table table-hover'>" + tableHtml.join("") + "</table>");
+	
+	$(".delete").each(function(index,item){
+		$(item).click(function(e){
+			var eid = $(this).parent().data("eid");
+			$.ajax({
+				url : "/api/update_error_status.json",
+				dataType : "json",
+				data : {eid : eid,status : 2,t : (+new Date())},
+				success:function(data){
+					if(data.status !== 0){
+						monitor.util.showFailAlert(data.error);
+						return;
+					}
+					monitor.util.showSuccessAlert("非常抱歉，误报错误了...",function(){
+						document.location.reload(true);
+					});
+				}
+			});
+			e.preventDefault();
+		});
+	});
+
+	$(".done").each(function(index,item){
+		$(item).click(function(e){
+			var eid = $(this).parent().data("eid");
+			$.ajax({
+				url : "/api/update_error_status.json",
+				dataType : "json",
+				data : {eid : eid,status : 1,t : (+new Date())},
+				success:function(data){
+					if(data.status !== 0){
+						monitor.util.showFailAlert(data.error);
+						return;
+					}
+					monitor.util.showSuccessAlert("非常感谢你修复了该问题...",function(){
+						document.location.reload(true);
+					});
+				}
+			});
+			e.preventDefault();
+		});
+	});
+
+	$(".note,.noted").click(function(e){
+		currentErrorID = $(this).parent().data("eid");
+		$("#note-content").val("");
+		$.ajax({
+			url : "/api/get_error_note.json?eid=" + currentErrorID,
+			dataType : "json",
+			success : function(json){
+				if(json.status !== 0){
+					monitor.util.showFailAlert(json.error);
+					return;
+				}
+				json.data['note'] && $("#note-content").val(json.data['note']);
+			}
+		});
+		$("#noteModal").modal();
+		e.preventDefault();
+	});
+}
+
+
+$("#send-note").click(function(){
+	var note = $.trim($("#note-content").val());
+	var eid = currentErrorID;
+
+	if(!note){
+		$("#note-content").focus();
+		return;
+	}
+
+	$.ajax({
+		url : "/api/add_error_note.json",
+		type : "POST",
+		dataType : "json",
+		data : {eid : eid,content :note},
+		success : function(json){
+			if(json.status !== 0){
+				monitor.util.showFailAlert(json.error);
+				return;
+			}
+			window.location.reload(true);
+		}
+	});
+});
+
+
+function bindPagerEvent(){
+	var pn;
+	$(".pagers").click(function(e){
+		var target = e.target;
+		if(target.nodeName.toLowerCase() === "a"){
+			if(target.parentNode.className === "active" || target.parentNode.className === "disabled"){
+				e.preventDefault();
+				return;
+			}
+			pn = parseInt($(target).data("pn"),10);
+			window.location.hash = "#" + pn;
+			getCaseList(pn,callback);
+			e.preventDefault();
+		}
+	});
+}
+
+bindPagerEvent();
+
+function getCaseList(pn,callback){
+	$.ajax({
+		url : "/api/get_errors.json",
+		dataType : "json",
+		data : {pn : pn,rn : pageNums,uid : loginUserID,t : (+new Date())},
+		success : function(data){
+			if(data.status !== 0){
+				monitor.util.showFailAlert(data.error);
+				return;
+			}
+			if(data.data.length === 0){
+				monitor.util.showFailAlert(data.error);
+			}else{
+				callback && callback(pn,data);	
+			}
+		},
+		error : function(){
+			monitor.util.showFailAlert("发生未知错误，似乎是500");
+		}
+	});
+}
+
+
+var hash = window.location.hash.replace("#","");
+var pn = 1;
+var urlHashs = hash.split("=");
+if(urlHashs[0] == "pn"){
+	pn = parseInt(urlHashs[1],10);
+}
+getCaseList(pn,callback);
+
+
+function callback(pn,json){
+	buildCaseTable(json);
+	buildPagers(pn,json);
+}
+
+</script>
+{% endblock%}

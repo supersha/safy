@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}首页{% endblock %}
+
+{% block head_style %}
+<style>
+	.editor-box{border:1px solid #aaa;width:700px;height:305px;position:relative;background: #fff;}
+	#editor{width:700px;height:305px;}
+	#mask{position:absolute;left:0;top:0;z-index:1000;background:#ddd;opacity:0.3;width:700px;height:305px;}
+	#mask:hover{opacity:0.5;}
+	.editor-box .play{z-index:1001;position:absolute;left:40%;;top:42%;opacity:1;}
+
+	.lead small{font-weight:normal;font-size:14px;}
+
+	.container{position:relative;}
+
+	.update-box{position:absolute;right:0;top:0;width:400px;border:1px solid #ddd;background:#f9f9f9;padding:10px;}
+	.update-title h4{margin:0;}
+	.update-title .icon-th-list{margin-top:5px;}
+
+	.update-list{margin-top:15px;font-size:13px;}
+	.update-list ul{list-style:none;margin:0 0 0 20px;padding:0;}
+	.update-list li{margin-bottom:8px;}
+</style>
+{% endblock %}
+
+
+{% block head %}
+	{% include 'common/head.html' %}
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+	<p class="lead">目标和愿景:</p>
+	<blockquote>
+		Case写的舒心，线上功能跑的放心，周末过的安心，Bug被发现的迫切心。
+	</blockquote>
+	
+	<p class="lead" style="display:none;">功能: <small>支持PC、Pad、Wise，对线上的功能做全面的测试监控。</small></p>
+	
+	<div class="editor-box">
+		<div id="editor"></div>
+		<div id="mask"></div>
+		<div class="play"><button id="play-example" class="btn btn-lager btn-success"><i class="icon-play-circle icon-white"></i> 播放单测示例</button></div>
+	</div>
+
+	<div class="update-box">
+		<div class="update-title"><h4 class="text-success"><i class="icon-th-list"></i>更新日志</h4></div>
+		<div class="update-list">
+			<ul>
+				<li><span class="label label-info">3.2</span> 编辑器添加自动备份代码功能，防止浏览器误操作代码丢失</li>
+				<li><span class="label label-info">3.2</span> 给Ace编辑器添加了AutoComplete完成功能,<a href='https://gist.github.com/supersha/5230745' target="_blank">查看</a></li>
+				<li><span class="label label-info">3.2</span> 添加了自定义通用模块代码的API</li>
+				<li><span class="label label-info">3.2</span> 添加了Selenium Python Case API</li>
+				<li><span class="label label-info">3.1</span> 改进录制行为生成的代码，统一为createAction API</li>
+				<li><span class="label label-info">3.1</span> 添加手写用户行为的API，方便编写Case</li>
+				<li><span class="label label-info">3.0</span> 新增录制页面行为功能(实验功能)，<a href='/recorder?url=http%3A%2F%2Fwww.baidu.com%2Fs%3Fwd%3D%25BA%25BD%25B0%25E0%25B2%25E9%25D1%25AF%26rsv_bp%3D0%26rsv_spt%3D3%26rsv_sug3%3D9%26rsv_sug%3D1%26rsv_sug1%3D7%26rsv_sug4%3D331%26inputT%3D3823' target='_blank' class='hint hint--left' data-hint="按Esc退出获取行为数据">查看示例</a></li>
+				<li><span class="label label-info">3.0</span> 提供获取DOM元素CSS Selector的功能，<a href='/selector?url=http%3A%2F%2Fwww.baidu.com%2Fs%3Fwd%3D123%26rsv_bp%3D0%26rsv_spt%3D3%26inputT%3D333' class="hint hint--left" data-hint="鼠标移动到DOM元素上就会显示" target='_blank'>查看示例</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+
+{% block foot %}
+ 	{% include 'common/foot.html' %}
+{% endblock %}
+
+{% block foot_script %}
+<script src="/ace/ace.js"></script>
+<script>
+var editor = ace.edit("editor");
+//editor.setTheme("ace/theme/monokai");
+editor.setReadOnly(true);
+editor.setShowPrintMargin(false);
+editor.getSession().setMode("ace/mode/javascript");
+</script>
+
+<script id="example-code" type="text/javascript-example">monitor.run(function(){
+	should({name : 1}).have().property("name").sms("have no property of name");
+}).run(function(){
+	should(document.getElementById("test")).has().attr("data-value").success(function(){
+		console.log("yes,it has");
+	}).fail(function(){
+		monitor.sendError("该DOM元素不存在");
+	});
+}).run(function(){
+	should([1,3,4]).include(3).warn("it doesn't include 3");
+}).complete();</script>
+
+<script>
+$("#play-example").click(function(){
+	$("#mask").css("display","none");
+	$(".play").css("display","none");
+	var codes = $("#example-code").html().split("");
+
+	var interval = setInterval(function(){
+		if(codes.length){
+			var value = editor.getValue();
+			editor.setValue(value + codes.shift(),3);
+		}else{
+			clearInterval(interval);
+		}
+	}, 100);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,765 @@
+{% extends 'base.html' %}
+
+{% block title %}接口文档{% endblock %}
+
+{% block head_style %}
+<style>
+body{padding-bottom:0;}
+section{margin-top:50px;}
+.page-header{margin:20px 0 10px;padding-bottom:0;}
+.page-header h4{margin-top:0;}
+#monitor{margin-top:0;}
+#monitor .page-header{margin-top:0;}
+.bs-docs-sidenav{margin-top:20px;}
+blockquote{margin:20px 0 10px;border-left-color:#ccc;background:#eee;}
+#footer {position:static;}
+
+section{padding-top:0;}
+
+.api-boxs{margin-left: 270px;}
+.api-sidebar{margin-bottom:25px;line-height:28px;position:fixed;top:57px;left:0;display:none;}
+.api-sidebar a{font-size:13px;}
+.api-sidebar p{margin-bottom:0;}
+
+</style>
+<link rel="stylesheet" href="/shjs/css/sh_kwrite.min.css">
+{% endblock %}
+
+{% block head_script %}
+<script src="/shjs/sh_main.min.js"></script>
+<script>
+window.onload = function(){
+	sh_highlightDocument('/shjs/lang/', '.js');
+	hilightMonitor();
+}
+</script>
+{% endblock %}
+
+{% block head %}{% include 'common/head.html' %}{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="api-sidebar">
+        <p><a href="#monitor">monitor对象接口API</a></p>
+        <p><a href='#monitor-module'>monitor自定义通用模块API</a></p>
+        <p><a href="#should">should函数接口API</a></p>
+        <p><a href='#selenium-python-api'>Selenium Python Case API</a></p>
+        <p><a href="#cases">常见案例示例单侧代码</a></p>
+        </ul>
+    </div>
+    
+    <div class="api-boxs span9">
+    	<section id="monitor">
+    		<div class="page-header"><h4>monitor对象接口API <small>日志、功能接口</small></h4></div>
+    <p><code>monitor.sendError/monitor.error;</code> 发送错误信息</p>
+    <p><code>monitor.sendLog/monitor.log;</code> 发送描述信息（不是一个错误）</p>
+    <p><code>monitor.sendWarn/monitor.warn;</code> 发送警告信息</p>
+    <p><code>monitor.sendSMS/monitor.sms;</code> 发送短信通知</p>
+    <p><code>monitor.sendMail/monitor.mail;</code> 发送邮件通知</p>
+    <p><code>monitor.complete();</code> 显示调用该单测执行完成，建议每一个单测都显示调用complete方法</p>
+    <p><code>monitor.run</code> 链式执行方法体</p>
+    <p><code>monitor.jsonp(callback_name,handle)</code> 处理页面jsonp请求，验证数据等</p>
+    <p><code>monitor.step(xxx,handler)</code> 录制页面行为后执行每一步的函数(<span class='label label-info'>已废弃，但原有功能不变</span>)</p>
+    <p><code>monitor.createAction(option)</code> 创建一个行为对象，手写用户行为单侧代码的时候使用</p>
+    <h5>代码实例</h5>
+    <blockquote>monitor.run方法，run方法可以链式调用</blockquote>
+<pre>
+monitor.run(function(){
+    //发送错误信息
+    monitor.sendError("xxx");
+    // or
+    monitor.error("xxx");
+}).complete();
+
+/*monitor.sendLog("xxx")*/
+monitor.run(function(){
+    monitor.sendLog("xxx");
+    // or
+    monitor.log("xxx");
+}).complete();
+</pre>
+
+<blockquote>链式调用run</blockquote>
+<pre>
+monitor.run(function(){
+    if(document.title.indexOf("百度") !== 0){
+        monitor.sendError("页面title错误");
+    }
+}).run(function(){
+    if(!document.getElementById("test")){
+        monitor.sendWarn("ID为test的DOM元素不存在");
+        // or
+        monitor.warn("xxxx");
+    }
+}).complete();
+</pre>
+<blockquote>循环发送</blockquote>
+<pre>
+monitor.run(function(){
+    var links = document.getElementsByTagName("a");
+    for(var i = 0,len = links.length; i &lt; len; i++){
+        if(links[i].getAttribute("href").indexOf("http://") == -1){
+            monitor.sendWarn("页面存在相对链接：" + links[i].href);
+        }
+    }
+    monitor.complete();
+});
+</pre>
+<blockquote>monitor.jsonp</blockquote>
+<pre>
+//这样调用之后，页面上发起的该jsonp_callback的jsonp请求，就会处理下面的回调函数，原有的逻辑也会正常执行
+monitor.jsonp("window.jsonp_callback",function(data){
+    if(!data.name){
+        monitor.error("name数据不存在");
+    } 
+});
+</pre>
+<blockquote>monitor.setp</blockquote>
+<pre>
+//需要特别注意一点的是：step第一个参数后面的数字，是时间序列，都是相对于第一个step的时间间隔
+//即是每一个step的执行时间，都是减去第一个step后的时间序列，按照这个序列执行每一个step
+//因此，在手动写wait行为的时候，需要注意一下，时间数值要比上一个step中的时间数值大就行
+
+/*
+目前monitor.step方法有几种类型：
+type: 对一个输入框(input,textarea,select) 赋值
+click: 触发一个元素的click操作
+mouseover: 触发一个元素的mouseover操作
+wait: 等待几秒后继续执行（这个主要是手写的step类型）
+*/
+
+// type、click、mouseover类型的最后一个回调函数的参数，就是当前的DOM元素
+
+monitor.step("type::#op_train_start::本::0",function(el){})
+.step("type::#op_train_start::::239",function(el){})
+.step("type::#op_train_start::b::1479",function(el){})
+.step("click::#tangram-suggestion--TANGRAM__3-item4::3346",function(el){})
+.step("type::#op_train_end::s::5160",function(el){})
+.step("click::#tangram-suggestion--TANGRAM__g-item4::7137",function(el){})
+.step("click::#1>tbody>tr>td>font:nth-child(3)>div:nth-child(1)>table>tbody>tr:nth-child(1)>td:nth-child(3)>a::9242",function(el){})
+.step("click::#1>tbody>tr>td>font:nth-child(3)>div:nth-child(1)>table>tbody>tr:nth-child(1)>td:nth-child(3)>a::10305",function(el){});
+
+
+//wait类型的step:
+monitor.step("click::#example::0")
+.step("wait::2000",function(){
+    //这里编写点击2s后的验证代码
+});
+</pre>
+
+<blockquote>monitor.createAction(option)</blockquote>
+<pre>
+/* Tip：凡是涉及到传递目标元素参数的，都支持selector或者DOM元素的引用的方式 */
+
+/* 创建一个行为（一个case里面可以声明多个行为）*/
+var action = monitor.createAction();
+//可以带个参数，指定初始目标元素
+var action = monitor.createAction({
+    target : "#txt"
+});
+
+//目前Action下的方法有：type/click/clickOnce/mouseover/mouseup/mousedown/wait/complete/end，type、click、mouseover、wait方法支持链式调用
+// type: 对一个输入框(input,textarea,select) 赋值
+// click: 触发一个元素的click操作(会使用三种方式去触发：原生的fireEvent、jQuery trigger、调用元素的click方法)
+// clickOnce : 触发一个元素的click操作（只使用一种方法触发事件：原生的fireEvent）
+// mouseover : 触发一个元素的mouseover操作
+// mouseup : 触发一个元素的mouseup操作
+// mousedown : 触发一个元素的mousedown操作
+// wait: 等待多长时间继续执行下一个步骤
+// complete/end: 显示调用该行为结束，并且设置该单侧已完成（如果有多个行为，则最后一个行为调用complete/end方法即可，如果只有一个，那么该行为调用end以结束该单侧）
+
+
+/*
+ * 特别说明一下click/clickOnce的存在目的：有些场景去触发click事件，使用上面三种方法中的某一种都没法触发，
+ * 所以结合三种情况去触发，
+ * 但是这样的话，有可能事件会被触发三次，或者被触发一次，其他的触发无效，这是为了保证click一定会被触发。
+ * clickOnce就是为了上面的被触发多次后本身出现问题，所以它就是用原生的fireEvent去触发一次。
+ */
+
+
+/* 开始执行行为 */
+action.type("123456");
+//或者指定目标元素
+action.type("#txt","123456");
+//or
+action.type(document.getElementById("txt"),"123456").complete();
+//or
+action.type("123456",function(el){
+    console.log(el.value);
+}).complete();
+
+//带点击行为（mouseover行为类似）
+action.type("#txt","12345").click().complete();
+//带一个回调，回调函数的参数就是目标元素的DOM引用
+action.type("#txt","123").wait(1000).click(function(el){
+    console.log(el.value);
+}).complete();
+
+//在行为中也可以重新指定目标元素
+action.type("123").wait(2000).click("#btn",function(el){}).complete();
+
+//其实，wait/end方法也是有回调函数的，可以用在一些点击按钮发送jsonp的场景里面，验证效果
+action.type("#txt","123").wait(2000).click("#btn").wait(2000,function(){
+    console.log($("#txt").val());
+});
+
+//录制出来的代码如下所示：
+var action = monitor.createAction();
+.type("#op_hangban_start","s",function(el){})
+.wait(654,function(){})
+.click("#tangram-suggestion--TANGRAM__3-item5",function(el){})
+.wait(2248,function(){})
+.type("#op_hangban_end","s",function(el){})
+.wait(639,function(){})
+.click("#tangram-suggestion--TANGRAM__g-item7",function(el){})
+.complete(function(){});
+</pre>
+
+    	</section>
+
+
+        <section id="monitor-module">
+            <div class="page-header"><h4>monitor自定义通用模块API <small>提供define、require接口</small></h4></div>
+            <p><code>monitor.define(name,handler)</code> 定义一个module通用测试代码，供其他的测试代码使用</p>
+            <p><code>monitor.require(names,handler)</code> 使用一个或者多个modules通用测试代码的功能</p>
+            <br>
+            <h5>代码实例</h5>
+
+<blockquote>monitor.define(name,handler)</blockquote>
+<pre>
+/*
+ * monitor.define接口，定义一个module的自定义通用测试代码，比如封装一些通用的测试代码，避免重复的代码编写
+ * define方法不支持依赖的功能，每一个define都是一个独立的通用测试代码，供其他的测试用例使用
+ * 它的返回值可以是任何东西，默认是{}空对象
+ */
+
+monitor.define("module",function(){
+    var mod = {};
+
+    mod.sayHello = function(){
+        alert("hello module");
+    } 
+
+    return mod;
+});
+</pre>
+
+<blockquote>monitor.require(names,handler)</blockquote>
+<pre>
+/*
+ * monitor.require接口，可以使用一个module，也可以传入多个modules，当然，参数也可以只是一个函数
+ */
+
+//传入一个module
+monitor.require("module",function(module){
+    module.sayHello(); 
+});
+
+//传入多个modules
+monitor.require(["module1","module2"],function(module1,module2){
+    module1.sayHello();
+    module2.sayHi(); 
+});
+
+//啥module都没有
+monitor.require(function(){
+   //code here ... 
+});
+</pre>
+
+        </section>
+    	
+    	<section id="should">
+    		<div class="page-header"><h4>should函数接口API <small>单测代码判断等接口</small></h4></div>
+    		<p><code>should(xxx)</code> should方法，类似与jQuery的$</p>
+    		<p><code>should(xxx).be()</code> be介词</p>
+    		<p><code>should(xxx).have()</code> have介词</p>
+    		<p><code>should(xxx).has()</code> has介词</p>
+    		<p><code>should(xxx).not()</code> not介词，相反的意思</p>
+    		<p><code>should(xxx).and()</code> and介词</p>
+            <p><code>should(xxx).to()</code> to介词</p>
+    		<p><code>should(xxx).have().property(xxx)/should().haveProperty()/should().hasProperty()</code> 判断是否有属性，主要对object类型</p>
+    		<p><code>should(xxx).not().have().property(xxx)</code> 判断没有该属性，其它的类同</p>
+    		<p><code>should(xxx).have().attr(xxx)/should().haveAttr()/should().hasAttr()</code> 判断是否有attribute属性，主要对dom元素</p>
+            <p><code>should(xxx).beTrue/beTrues|beFalse/beFalse</code> 判断是否为true(存在)和false(不存在)</p>
+    		<p><code>should(xxx).have().ownProperty(xxx)/should().hasOwnProperty()</code></p>
+    		<p><code>should(xxx).have().lengthOf(number).should().beLengthOf()</code></p>
+    		<p><code>should(xxx).not().have().property(xxx)</code></p>
+    		<p><code>should(xxx).have().keys([xxx])/should().haveKeys()/should().hasKeys()</code></p>
+    		<p><code>should(xxx).have().include(string)</code> 判断是否包含某个内容(object->propery,array->item)</p>
+    		<p><code>should(xxx).be().empty()/should().beEmpty()</code> 判断是否为空(dom,string,array,object)</p>
+    		<p><code>should(xxx).be().a(xxx)/should().beA()</code> 判断是什么类型(dom,string,array,object,null,undefined...)</p>
+    		<p><code>should(xxx).be().above(number)/should().beAbove()</code> 判断给定的值是否大于某个数</p>
+    		<p><code>should(xxx).be().below(number)/should().beBelow()</code> 判断给定的值是否小于某个数</p>
+    		<p><code>should(xxx).equal(xxx)/should(xxx).beEqual(xxx)</code> 判断给定的值是否跟参数的相等</p>
+    		<p><code>should(xxx).exist()</code> 判断是否存在</p>
+    		<p><code>should(xxx).be().match(regexp)</code> 正则匹配</p>
+    		<p><code>should(xxx).have().child(dom)/should().haveChild()/should().hasChild()</code> 是否含有直接子元素</p>
+    		<p><code>should(xxx).have().parent(dom)/should().haveParent()/should()/hasParent()</code></p>
+    		<p><code>should(xxx).have().next(dom)/should().haveNext()/should().hasNext()</code></p>
+    		<p><code>should(xxx).have().prev(dom)/should().havePrev()/should().hasPrev()</code></p>
+    		<p><code>should(xxx).have().prev(dom).fail/success(function(){})</code> fail和success在前面判断是否ok的时候调用</p>
+            <p><code>should(xxx).not().be().empty().error(xxx)</code> 如果有错误，则发送错误信息</p>
+            <p><code>should(xxx).have().include(xxx).mail(xxx)</code> 如果有错误，则发送邮件信息</p>
+            <p><code>should(xxx).have().include(xxx).sms(xxx)</code> 如果有错误，则发送短信信息</p>
+            <p><code>should(xxx).have().include(xxx).log(xxx)</code> 如果有错误，则发送日志信息</p>
+            <p><code>should(xxx).have().include(xxx).warn(xxx)</code> 如果有错误，则发送警告信息</p>
+            <p><code>should(xxx).be().visible()</code> 判断指定的DOM元素应该是显示状态，只针对display</p>
+            <p><code>should(xxx).be().hide()</code> 判断指定的DOM元素应该是隐藏状态，只针对display</p>
+            <p><code>should(xxx).haveHrefKeys(keys)</code> 判断超链接DOM元素的href属性中是否包含指定的多个key是否有指定的值</p>
+            <p><code>should(xxx).haveHrefKey(key,value)</code> 判断超链接DOM元素的href属性中是否包含指定的一个key是否有指定的值</p>
+            <p><code>should(xxx).haveFormKeys(keys)</code> 判断一个form表单中指定的全部name的控件的值是否等于指定的值</p>
+            <p><code>should(xxx).haveFormKey(key,value)</code> 判断一个form表单指定的name的控件的值是否等于指定的值</p>
+    		<br>
+    		<h5>代码实例</h5>
+<blockquote>should介词</blockquote>
+<pre>
+should("xxx").be()
+should("xxx").not()
+should("xxx").and()
+should("xxx").have()
+should(xxx).has()
+</pre>
+<blockquote>should(xxx).have().property</blockquote>
+<pre>
+should({name : 1}).have().property("name").fail(function(){
+    monitor.sendError("have not property");
+}).success(function(){
+    cnosole.log("have property");
+});
+</pre>
+
+<blockquote>should(xxx).have().property</blockquote>
+<pre>
+should({name : 1}).have().property("name").fail(function(){
+    monitor.sendError("have not property");
+});
+</pre>
+
+<blockquote>should(xxx).have().attr</blockquote>
+<pre>
+should(document.getElementById("test")).have().attr("cid").fail(function(){
+    monitor.sendError("have not attribute");
+});
+</pre>
+
+<blockquote>should(xxx).not().have().property</blockquote>
+<pre>
+should({name : 1}).not().have().property("name").fail(function(){
+    monitor.sendError("it have property");
+});
+</pre>
+
+
+<blockquote>should(xxx).beTrue()/beTrues()|beFalse()/beFalses()</blockquote>
+<pre>
+should(1).beTrue().error("不为true");
+</pre>
+
+<blockquote>should(xxx).have().keys</blockquote>
+<pre>
+should([1,2,5,6,7,8]).have().keys([1,2,7]).fail(function(){
+    monitor.sendError("not have all the keys");
+});
+</pre>
+
+<blockquote>should(xxx).include</blockquote>
+<pre>
+should([1,2,4]).include(2).fail(function(){
+    monitor.sendError("not include");
+});
+</pre>
+
+<blockquote>should(xxx).be().empty</blockquote>
+<pre>
+should([]).be().empty().fail(function(){
+    monitor.sendError("not empty");
+});
+</pre>
+
+<blockquote>should(xxx).be().a</blockquote>
+<pre>
+should({name : 1}).be().a("object").fail(function(){
+    monitor.sendError("not a object");
+});
+
+should([1,2,4]).be().a("array").fail(function(){
+    monitor.sendError("not a array");
+});
+
+should(document.getElementById("test")).be().a("dom").faild(function(){
+    monitor.sendError("not a dom element");
+});
+</pre>
+
+<blockquote>should(xxx).have().match</blockquote>
+<pre>
+should("youname").have().match(/name/).fail(function(){
+    monitor.sendError("not match");
+});
+</pre>
+
+<blockquote>should(xxx).have().parent</blockquote>
+<pre>
+should(document.getElementById("test")).have().parent(document.getElementById("parent")).fail(function(){
+    monitor.sendError("not have id is parent");
+});
+</pre>
+
+<blockquote>should链式调用</blockquote>
+<pre>
+should({name : 1}).not().be().empty().fail(function(){
+    monitor.sendError("it is empty");
+}).and().have().property("name").fail(function(){
+    monitor.sendError("have no name property");
+});
+</pre>
+
+<blockquote>should(xxx).error()/warn()/log()/sms()/mail()</blockquote>
+<pre>
+should("").not().be().empty().error("指定的参数不为空");
+should("").not().be().empty().warn("指定的参数不为空");
+should("").not().be().empty().log("指定的参数不为空");
+should("").not().be().empty().sms("指定的参数不为空");
+should("").not().be().empty().mail("指定的参数不为空");
+</pre>
+<blockquote>should(xxx).be().visible()/should(xxx).be().hide()</blockquote>
+<pre>
+should($("#container")).be().visible().error("没有正常显示");
+should($("#container")).be().hide().error("没有正常关闭");
+</pre>
+<blockquote>should(xxx).haveHrefKeys(keys)</blockquote>
+<pre>
+//判断一个超链接的href属性参数中是否包含了wd和pn参数，并且值是否相等
+should($("#page>a:nth-child(11)")).haveHrefKeys({
+    "wd" : "123",
+    "pn" : 10
+}).error("error");
+</pre>
+<blockquote>should(xxx).haveHrefKey(key,value)</blockquote>
+<pre>
+//如果不指定value，则会验证该key是否存在
+should($("#page>a:nth-child(11)")).haveHrefKey("wd").error("error");
+
+//验证是否等于指定的值
+should($("#page>a:nth-child(11)")).haveHrefKey("wd","我们").error("error");
+</pre>
+
+<blockquote>should(xxx).haveFormKeys(keys)</blockquote>
+<pre>
+//指定的key是输入控件的name属性的值
+should("#example-form").haveFormKeys({
+    "username" : "safy",
+    "password" : "iloveyou"
+}).error("error message");
+</pre>
+
+<blockquote>should(xxx).haveFormKey(key,value)</blockquote>
+<pre>
+should("#example-form").haveFormKey("username","safy").error('error message');
+</pre>
+    	</section>
+
+
+
+        <section id="selenium-python-api">
+            <div class="page-header"><h4>Selenium Python版本的单侧API <small>参考Selenium python版本的api</small></h4></div>
+            <p><code>driver.find_element_by_id()</code> 通过ID获取DOM元素</p>
+            <p><code>driver.find_element_by_name()</code> 通过name属性值获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element_by_tag_name()</code> 通过tagName获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element_by_class_name()</code> 通过className获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element_by_link_text()</code> 通过链接的内容获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element_by_partial_link_text()</code> 通过超链接的部分内容获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element_by_css_selector()</code> 通过CSS Selector获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element_by_xpath()</code> 通过XPath获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_name()</code> 通过name属性值获取全部匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_tag_name()</code> 通过tagName获取全部匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_class_name()</code> 通过className获取全部匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_link_text()</code> 通过链接的内容获取全部匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_partial_link_text()</code> 通过链接部分内容获取全部匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_css_selector()</code> 通过CSS Selector获取全部匹配的DOM元素</p>
+            <p><code>driver.find_elements_by_xpath()</code> 通过xpath获取全部匹配的DOM元素</p>
+
+            <p><code>driver.find_element(By.NAME,"xxx")</code> 通过name属性值获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element(By.XPATH,"xxx")</code> 通过XPath获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element(By.CLASS_NAME,"xxx")</code> 通过className获取第一个匹配的DOM元素</p>
+            <p><code>driver.find_element(By.TAG_NAME)</code> 同上</p>
+            <p><code>driver.find_element(By.ID)</code> 同上</p>
+            <p><code>driver.find_element(By.CSS_SELECTOR)</code> 同上</p>
+            <p><code>driver.find_element(By.LINK_TEXT)</code> 同上</p>
+            <p><code>driver.find_element(By.PARTIAL_LINK_TEXT)</code> 同上</p>
+
+            <p><code>driver.find_elements(By.NAME,"xxx")</code> 同上</p>
+            <p><code>driver.find_elements(By.XPATH,"xxx")</code> 同上</p>
+            <p><code>driver.find_elements(By.CLASS_NAME,"xxx")</code> 同上</p>
+            <p><code>driver.find_elements(By.TAG_NAME)</code> 同上</p>
+            <p><code>driver.find_elements(By.ID)</code> 同上</p>
+            <p><code>driver.find_elements(By.CSS_SELECTOR)</code> 同上</p>
+            <p><code>driver.find_elements(By.LINK_TEXT)</code> 同上</p>
+            <p><code>driver.find_elements(By.PARTIAL_LINK_TEXT)</code> 同上</p>
+
+            <p><code>driver.execute_script(xxx)</code> 执行一段js代码，并获取执行返回结果</p>
+            <br>
+            <h5>代码实例</h5>
+
+<blockquote>driver</blockquote>
+<pre>
+//driver这个对象是内置的，在编写单侧代码的时候直接调用即可，它包含上面罗列的方法，上面的方法调用后，
+//返回一个webElement的对象，webElement还可以继续调用上面的方法，获取子元素、获取属性值、each、click、submit等更多的操作
+</pre>
+
+<blockquote>driver.find_element_by_id()</blockquote>
+<pre>
+var input = driver.find_element_by_id("kw");
+should(input.get_attribute("value")).be().equal("123").error("xxxx");
+</pre>
+
+<blockquote>driver.find_element_by_name()</blockquote>
+<pre>
+//获取一个name
+var input = driver.find_element_by_name("kw");
+should(input.get_attribute("value")).be().equal("123").error("xxxx");
+
+//获取多个name
+var inputs = driver.find_elements_by_name("user");
+inputs.each(function(index,item){
+    should($(item).val()).be().equal("123").error("xxx");
+})
+</pre>
+
+<blockquote>driver.find_element_by_tag_name()</blockquote>
+<pre>
+//获取第一个select控件
+var selectElement = driver.find_element_by_tag_name("select");
+var optionsElement = selectElement.find_element_by_tag_name("option");
+optionsElement.each(function(index,item){
+    // code here ...
+});
+</pre>
+
+<blockquote>driver.find_element_by_class_name()</blockquote>
+<pre>
+var inputElement = driver.find_element_by_class_name(".kw");
+inputElement.send_keys("123");
+inputElement.click();
+// or
+var formElement = driver.find_element_by_class_name(".myform");
+forElement.submit();
+</pre>
+
+<blockquote>driver.find_element_by_link_text()</blockquote>
+<pre>
+// HTML : &lt;a href="http://www.baidu.com">baidu link&lt;/a>
+
+var link = driver.find_element_by_link_text("baidu link");
+link.get_attribute("href");
+</pre>
+
+<blockquote>driver.find_element_by_partial_link_text()</blockquote>
+<pre>
+// HTML : &lt;a href="http://www.baidu.com">baidu link&lt;/a>
+
+var link = driver.find_element_by_partial_link_text("baidu");
+link.get_attribute("href");
+</pre>
+
+<blockquote>driver.find_element_by_css_selector()</blockquote>
+<pre>
+var exampleElement = driver.find_element_by_css_selector("#example");
+link.get_text();
+</pre>
+
+<blockquote>driver.find_element(By.CSS_SELECTOR,"xxx")</blockquote>
+<pre>
+/*
+ * By现在有下面几种类型，对应着上面的方法：
+ * ID,NAME,CLASS_NAME,TAG_NAME,LINK_TEXT,PARTIAL_LINK_TEXT,CSS_SELECTOR,XPATH
+ */
+
+var exampleElement = driver.find_element(By.CSS_SELECTOR,"#example");
+//获取#example下面的全部div子元素
+exampleElement.find_elements(By.TAG_NAME,"div").each(function(index,item){
+    // code here ... 
+});
+
+// 其他By的例子同上
+</pre>
+
+<blockquote>driver.execute_script()</blockquote>
+<pre>
+var labels = driver.find_elements_by_tag_name("label");
+var inputs = driver.execute_script(
+    "var labels = arguments[0],inputs = [];" + 
+    "for(var i =0; i < labels.length; i++){" + 
+    "   inputs.push(document.getElementById(labels[i].getAttribut('for')));" + 
+    "}" +
+    "return inputs;",
+    labels.get_elements() //获取到DOM元素的集合
+);
+</pre>
+
+
+        </section>
+
+
+
+        <section id="cases">
+            <div class="page-header"><h4>常见案例示例单侧代码 <small>场景展示并附加测试代码DEMO</small></h4></div>
+
+<blockquote>验证某个按钮的事件是否正常执行</blockquote>
+<pre>
+var action = monitor.createAction();
+action.click("#example",function(el){
+    //在这里验证该元素的变化，比如点击后背景发生变化
+    should($(el).css("backgroundColor")).be().equal("#c00").error("背景颜色没变化");
+})
+.wait(2000,function(){
+    //在这里验证点击后产生的效果，比如验证点击后异步请求的效果：内容是否为空
+    should($("#content").html()).be().exist().error("异步请求内容为空");
+})
+.complete();
+</pre>
+            
+<blockquote>判断某个节点的文本内容是否等于指定的值</blockquote>
+<pre>
+should($("#example").text()).be().equal("xxxx");
+</pre>   
+
+<blockquote>点击某个按钮，发送JSONP异步请求，验证结果并验证数据</blockquote>
+<pre>
+var action = monitor.createAction();
+action.click("#example")
+.wait(2000,function(){
+   //这个回调函数里面，可以写额外的测试代码去判断页面的效果，比如元素显示隐藏，数据是否展示，数据提示是否ok 
+})
+.complete(); //结束测试
+
+//验证JSONP异步数据本身内容(monitor.jsonp方法的第一个参数，就是jsonp回调执行的函数名，就是cb参数传的值)
+monitor.jsonp("window.json_callback",function(json){
+    if(json.status != 0){
+        monitor.error("数据错误")
+    }
+});
+</pre>
+
+<blockquote>点击Tab组件的每一个Tab选项卡，并验证每一个tab内容是否正常显示出来</blockquote>
+<pre>
+//这个功能可以使用录制的方式，验证是否正常显示，需要在回调函数中简单写一点代码来验证
+var action = monitor.createAction();
+action.click("#tab2",function(el){
+    //这部分手写代码验证
+    should($("#tab2-box").css("display")).beEqual("block").error("tab显示不正确");  
+})
+.wait(1000)
+.click("#tab3",function(el){
+    should($("#tab3-box").css("display")).beEqual("block").error("tab显示不正确");  
+})
+.complete();
+</pre>
+
+<blockquote>判断某个阿拉丁的结果里面图片数量至少大于1个</blockquote>
+<pre>
+//对于一些判断阿拉丁数据是否存在的，先需要判断一下该条阿拉丁是否存在，
+//否则，某个query下，该阿拉丁不存在了，也去判断，就会出现错误、误报了。
+//因此，首先要判断该阿拉丁是存在的，才能做接下来的判断
+if(monitor.util.hasAladdin("tieba2")){
+    should($("table[tpl=tieba2] img").size()).be().above(0).error("一个图片都不存在");
+}
+</pre>
+
+<blockquote>点击类似“更多”，“收起“等操作，DOM元素的显示和隐藏</blockquote>
+<pre>
+var action = monitor.createAction();
+action.click("#open",function(){
+    should($("#hide-box")).be().visible().error("没有正常显示容器");
+})
+.wait(1000)
+.click("#close",function(){
+    should($("#hide-box")).be().hide().error("没有正常隐藏容器");
+})
+.complete();
+</pre>
+
+<blockquote>点击按钮，打开新窗口，判断拼装的URL是否正确</blockquote>
+<pre>
+//比如一些机票、火车票查询的阿拉丁，填写from、to然后点击查询，跳到第三方网站
+var action = monitor.createAction();
+action.click("#example-btn",function(el){
+    should($(el).attr("href")).match(/wd=([^&]+)/).error("URL拼装有问题");
+})
+.complate();
+</pre>
+
+<blockquote>IP查询，或者手机号码查询的阿拉丁，对于输入错误的内容，会显示错误提示的验证</blockquote>
+<pre>
+var action = monitor.createAction();
+action.type("#cell_txt","sdfsdf")
+.click("#btn")
+.wait(2000,function(){
+    should($("#error_tip")).be().visible().error("错误提示未显示");
+})
+.complete();
+</pre>
+
+<blockquote>对于一些Sug功能的验证，比如选择某个sug后，验证输入框中是否是选择的值</blockquote>
+<pre>
+//首先，对于sug的功能，请使用录制功能进行录制用户行为，自动生成代码，如下：
+
+var action = monitor.createAction();
+action.type("#op_hangban_start","s",function(el){})
+.wait(491,function(){})
+.mouseover("#tangram-suggestion--TANGRAM__3-item0",function(el){})
+.mouseover("#tangram-suggestion--TANGRAM__3-item4",function(el){})
+.wait(422,function(){})
+.click("#tangram-suggestion--TANGRAM__3-item4",function(el){
+    //这里就是点击了sug的某一个选项，然后在这里可以做验证了（其他类似的验证，都可以通过这样方式）
+    //这里的el参数，就是当前点击的元素
+    should($(el).text()).be().equal($("#op_hangban_start").val()).error("sug的值对不上");
+})
+.wait(1150,function(){})
+.type("#op_hangban_end","f",function(el){})
+.wait(481,function(){})
+.mouseover("#tangram-suggestion--TANGRAM__g-item0",function(el){})
+.wait(150,function(){})
+.mouseover("#tangram-suggestion--TANGRAM__g-item1 span.op_hangban_hilight",function(el){})
+.wait(518,function(){})
+.click("#tangram-suggestion--TANGRAM__g-item1 span.op_hangban_hilight",function(el){})
+.complete(function(){});
+</pre>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block foot %}{% include 'common/foot.html' %}{% endblock %}
+
+{% block foot_script %}
+<script>
+$("pre").each(function(index,item){
+	$(item).addClass("sh_javascript");
+});
+
+function hilightMonitor(){
+	$(".sh_javascript").each(function(index,item){
+		var text = $(item).html();
+		text = text.replace(/(monitor)/g,"<span class='monitor'>$1</span>");
+		$(item).html(text);
+	});
+}
+
+
+function updatePosition(){
+    $(".api-sidebar").show().css("left",$(".api-boxs").position()['left'] + "px");
+}
+
+updatePosition();
+
+
+$(window).on("resize",function(){
+    updatePosition();
+});
+
+
+</script>
+{% endblock %}

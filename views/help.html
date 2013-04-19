@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}接口文档{% endblock %}
+
+{% block head_style %}
+<style>
+#help-list{margin-bottom:25px;line-height:18px;position:fixed;top:57px;left:0;width:250px;}
+#help-list a{font-size:13px;}
+#help-list p{margin-bottom:10px;}
+
+
+.boxes{margin:0 auto 30px;}
+
+.section-boxes{margin-left:270px;}
+</style>
+<link rel="stylesheet" href="/shjs/css/sh_kwrite.min.css">
+{% endblock %}
+
+{% block head_script %}
+<script src="/shjs/sh_main.min.js"></script>
+<script>
+window.onload = function(){
+	sh_highlightDocument('/shjs/lang/', '.js');
+	hilightMonitor();
+}
+</script>
+{% endblock %}
+
+{% block head %}{% include 'common/head.html' %}{% endblock %}
+
+{% block content %}
+<div class="container help-container">
+
+  <div class="boxes">
+
+    <div id="help-list"></div>
+
+    <div class="section-boxes span9">
+
+        <div class="section complete-method">
+            <h4>关于monitor.complete方法的说明</h4>
+            <div class="info-content">
+                monitor.complete方法是显示声明，该单侧代码已测试完毕，一般情况下，建议在单侧代码中，加上该函数的调用。<br>
+                有两种情况例外：录制的行为单侧代码以及手写的用户行为代码，这两种在complete方面有不同的处理，因为它们是一个时间序列的，所以调用complete不太方便。<br>
+                手写的用户行为代码里面，最后需要调用一个complete/end这样的方法，该方法也是显示说明该单侧已调用完毕，跟complete方法一致。
+            </div>
+        </div>
+
+        <div class="section user-action">
+            <h4>关于手写用户行为Case</h4>
+            <h5>TIP: <small>录制用户行为的代码已更新为使用该API</small></h5>
+            <div class="info-content">
+                <p>虽然已经提供了录制行为的工具，但是难免有些行为是没法录制，或者录制的行为已不能满足Case的需求，<br>为此，提供出来更人性化的API来写这类的用户行为Case代码。</p>
+                <p><strong>示例</strong></p>
+            <pre>
+//Tip：凡是涉及到传递目标元素参数的，都支持selector或者DOM元素的引用的方式
+
+//创建一个行为
+var action = monitor.createAction();
+//带个参数，指定目标元素，目标元素可以是一个selector，也可以直接是一个DOM元素的引用
+var action = monitor.createAction({
+    target : "#txt"
+});
+var action = monitor.createAction({
+    target : document.getElementById("txt");
+});
+
+//创建了行为之后，就可以开始执行指定的行为了
+action.type("value").wait(2000).click().end();
+
+//当然，目标元素可以在链式调用中重新指定
+action.type("value")
+.wait(1000)
+.click("#btn")  //重新指定目标元素，并点击该元素
+.complete();
+
+//当然，你也可以在创建目标元素的时候，不指定目标元素，在执行行为的时候指定
+var action = monitor.createAction();
+action.type("#txt","123456")
+.wait(2000)
+.click("#btn")
+.complete();
+
+//执行行为的时候，也可以加入回调函数，去执行一些额外的事情
+action.type("#txt","123456")
+.wait(1000)
+.click("#btn",function(el){
+    console.log($("#txt").val());
+})
+.complete();</pre>
+            </div>
+        </div>
+
+        <div class="section write-case">
+            <h4>关于创建测试用例</h4>
+            <div class="info-content">
+                <p>在<a href='/create' target='_blank'>创建单侧</a>页面中，创建单侧有简单和高级两种(其实也不算高级，就是多了点选项而已)</p>
+                <p>单侧分为通用测试、只跟URL关联。通用测试，顾名思义就是通测，任何URL相关联的单侧都会加入该通用测试的测试代码；只跟URL关联的测试就只是在该URL下才加入该测试代码。</p>
+                <p>简单的创建单侧，只需要一个标题、URL[可选]，测试代码[可选]。创建单侧页面已“够智能”，能根据URL区分几个选项了。</p>
+                <p>高级的选项，看看选项名称就知道了。</p>
+                <p>测试的错误信息，浏览：<a target='_blank' href='/result'>测试结果</a></p>
+            </div>
+        </div>
+
+        <div class="section recorder">
+            <h4>录制页面行为功能说明</h4>
+            <h5>TIP: <small>已更新为使用良好支持手写的monitor.createAction() API</small></h5>
+            <div class="info-content">
+                <p>打开需要录制页面行为的页面，在页面内进行操作，在操作完了之后，按<code>Esc</code>按键，则退出录制行为，<br>然后弹出一个录制行为结果的浮层，复制代码即可。浮层消失后，页面会开启获取页面DOM元素的CSS Selector功能，方便对指定的DOM元素获取selector。 <a href='/recorder?url=http%3A%2F%2Fwww.baidu.com%2Fs%3Fwd%3D%25BA%25BD%25B0%25E0%25B2%25E9%25D1%25AF%26rsv_bp%3D0%26rsv_spt%3D3%26rsv_sug3%3D9%26rsv_sug%3D1%26rsv_sug1%3D7%26rsv_sug4%3D331%26inputT%3D3823' target='_blank' class='hint hint--right' data-hint="按Esc退出获取行为数据">查看示例</a></p>
+                <p><strong>数据结构说明：</strong></p>
+                <p><code>action_type::selector::[value]::timestamp</code></p>
+                <p>第一个为行为类型(click,type,mouseover等)；第二个是元素的CSS Selector；如果是type行为，则第三个是type的值，即是给input/textarea/select元素赋值；<br>最后一个为时间间隔，每一个行为数据类型相距第一个行为的时间间隔。</p>
+                <p><strong>代码示例：</strong></p>
+            <pre>
+monitor.step("type::#op_train_start::本::0",function(el){})
+.step("type::#op_train_start::::239",function(el){})
+.step("type::#op_train_start::b::1479",function(el){})
+.step("click::#tangram-suggestion--TANGRAM__3-item4::3346",function(el){})
+.step("type::#op_train_end::s::5160",function(el){})
+.step("click::#tangram-suggestion--TANGRAM__g-item4::7137",function(el){})
+.step("click::#1>tbody>tr>td>font:nth-child(3)>div:nth-child(1)>table>tbody>tr:nth-child(1)>td:nth-child(3)>a::9242",function(el){})
+.step("click::#1>tbody>tr>td>font:nth-child(3)>div:nth-child(1)>table>tbody>tr:nth-child(1)>td:nth-child(3)>a::10305",function(el){});</pre>
+                <p>每一个step函数都会带有一个回调函数，该回调函数在前面的selector触发后执行，参数是当前selector的DOM元素的引用。<br>执行到最后会自动调用complete()方法，所以不用显示声明complete()方法。</p>
+                <p><strong>Tip:</strong>该功能请使用非IE浏览器。</p>
+            </div>
+        </div>
+
+        <div class="section selector">
+            <h4>获取DOM元素CSS Selector功能说明</h4>
+            <div class="info-content">
+                <p>打开相应的页面后，鼠标移动到DOM元素上面，会弹出浮层提示selector，还附带又一个验证的按钮，<br>点击高亮刚才的DOM元素，验证是否正确，然后可以复制Selector到测试代码中编写了。 <a href='/selector?url=http%3A%2F%2Fwww.baidu.com%2Fs%3Fwd%3D123%26rsv_bp%3D0%26rsv_spt%3D3%26inputT%3D333' target='_blank' class="hint hint--right" data-hint="鼠标移动到DOM元素上就会显示">查看示例</a></p>
+                <p>有些Selector获取的会比较长，因为要兼容PC/PAD/WISE，使用CSS中原生的selector，而没有使用jQuery中自定义的伪类。</p>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block foot %}{% include 'common/foot.html' %}{% endblock %}
+
+{% block foot_script %}
+<script>
+$("pre").each(function(index,item){
+  $(item).addClass("sh_javascript");
+});
+
+
+function hilightMonitor(){
+  $(".sh_javascript").each(function(index,item){
+    var text = $(item).html();
+    text = text.replace(/(monitor)/g,"<span class='monitor'>$1</span>");
+    $(item).html(text);
+  });
+}
+
+
+$(".section h4").each(function(index,item){
+    var text = $(item).text();
+    var id = this.parentNode.className.replace("section ","");
+    $("<p><a href='#" + id + "'>" + text + "</a></p>").appendTo($("#help-list"));
+    $("<a name='" + id + "' id='" + id + "'></a>").insertBefore($(this).parent());
+});
+
+
+function updatePosition(){
+    $("#help-list").css("left",$(".section-boxes").position()['left'] + "px");
+}
+
+updatePosition();
+
+
+$(window).on("resize",function(){
+    updatePosition();
+});
+
+</script>
+{% endblock %}
+
+

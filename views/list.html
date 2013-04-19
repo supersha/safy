@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+
+{% block title %}单测列表{% endblock %}
+
+{% block head_style %}
+<style>
+#manual-start-case{width:95px;}
+.start-run-allcase{display:none;}
+
+.lists th{background:whiteSmoke;}
+.lists .close-case td{background:#f9f9f9;color:#ccc;}
+.lists .close-case a{color:#ccc;}
+.lists .close-case span{color:#ccc;}
+
+td{background:#fff;}
+.run-case-modal{width:650px;}
+</style>
+{% endblock %}
+
+{% block head %}{% include 'common/head.html' %}{% endblock %}
+
+{% block foot %}{% include 'common/foot.html' %}{% endblock %}
+
+{% block content %}
+<div class="container">
+<div class="alert">
+   <span class="alert-content"></span>
+</div>
+
+
+<div class="lists"></div>
+<div class="pagers"></div>
+
+</div>
+
+<div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">删除确认</h3>
+  </div>
+  <div class="modal-body">
+    <p>你真的要删除该单测吗？</p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-small" data-dismiss="modal" aria-hidden="true">取消</button>
+    <button id="delete-sure-btn" class="btn btn-small btn-primary">确认</button>
+  </div>
+</div>
+
+{% endblock%}
+
+{% block foot_script %}
+<script>
+var loginUser = "{{ passport.user }}";
+var loginUserID = "{{ passport.uid }}";
+
+var caseType = {"1" : "URL关联","2" : "通用单测"};
+var caseDevice = {"1" : "PC","2" : "PAD","3" : "Phone"};
+
+var pageNums = 10;
+
+
+
+function buildPagers(pn,json){
+	var total = json.total;
+	var pagerHtml = [];
+	var pagerNum = Math.floor(total/pageNums) + Math.ceil((total % pageNums)/pageNums);
+	var pageCount;
+	var loop;
+			
+	if(pagerNum <= 1){return;}
+	
+	pn = pn || 1;
+	
+	if(pn > 1){
+		pagerHtml.push('<li><a href="#" data-pn="' + (pn - 1) + '">«</a></li>');
+	}else{
+		pagerHtml.push('<li class="disabled"><a href="#">«</a></li>');
+	}
+	
+	
+	if(pn < 7){
+		for(var i=1;i<pn;i++){
+			pagerHtml.push('<li><a href="#" data-pn="' + i + '">' + i + '</a></li>');
+		}
+	}else{
+		pagerHtml.push('<li><a href="#" data-pn="1">1</a></li>');
+		pagerHtml.push('<li class="disabled"><a href="#">...</a></li>');
+		
+		for(var i=pn-3;i<pn;i++){
+			pagerHtml.push('<li><a href="#" data-pn="' + i + '">' + i + "</a></li>");
+		}
+	}
+	
+	pagerHtml.push('<li class="active"><a href="###">' + pn + "</a></li>");
+	
+	if(pn < 7){
+		for(var i=1;i <= (10-pn);i++){
+			pageCount = pn + i;
+			if((pageCount - 1) < pagerNum){
+				pagerHtml.push('<li><a href="#" data-pn="' + pageCount + '">' + pageCount + "</a></li>");
+			}
+		}
+	}else{
+		if((pagerNum - pn) >= 4){
+			loop = 4;
+		}else{
+			loop = pagerNum - pn;
+		}
+		
+		for(var i=1;i<=loop;i++){
+			pageCount = pn + i;
+			pagerHtml.push('<li><a href="#" data-pn="' + pageCount + '">' + pageCount + "</a></li>");
+		}
+	}
+	
+	if(pn < pagerNum){
+		pagerHtml.push('<li><a href="#" data-pn="' + (pn + 1) + '">»</a></li>');
+	}else{
+		pagerHtml.push('<li class="disabled"><a href="#">»</a></li>');
+	}
+	
+	$(".pagers").html('<div class="pagination pagination-centered"><ul>' + pagerHtml.join("") + '</ul></div>');
+}
+
+var deleteCaseID = 0;
+var deleteTRElement = null;
+var pageType = {"1" : "结果页","2" : "首页"};
+
+var casePos = {"1":"Head前","2":"Body后","3":"Body前","4":"Head后"};
+
+function buildCaseTable(json){
+	var data = json.data;
+	var tableHtml = ["<tr><th>#</th><th>标题</th><th>平台</th><th>位置</th><th>类型</th><th>日期</th><th>操作</th></tr>"];
+	for(var i =0;i<data.length;i++){
+		tableHtml.push("<tr class='" + (data[i].switch == 1 ? "close-case" : "") + "'><td>" + data[i].id + "</td><td>" + (data[i].url ? ("<a href='" + data[i].url + "' target='_blank'>" + data[i].title + "</a>") : data[i].title) + "</td><td>" + caseDevice[data[i].device] + "</td><td>" + casePos[data[i].position] + "</td><td>" + caseType[data[i].type] + "</td><td>" + data[i].adddate + "</td><td data-cid='" + data[i].id + "'><a target='_blank' href='/tool?token=" + data[i].token + "' class='start-single-case hint hint--right' style='display:none;' data-hint='新窗口运行该单测'>运行</a> <a class='case-switch " + (data[i].switch == 1 ? "" : "hint hint--right") + "' " + (data[i].switch == 1 ? "" : "data-hint='关闭该单侧后不再运行'") + " data-switch='" + data[i].switch + "' href='#'>" + (data[i].switch == 1 ? "开启" : "关闭") +"</a> <a href='/create?cid=" + data[i].id + "'>编辑</a> <a class='delete-case' href='#'>删除</a></td></tr>");
+	}
+	$(".lists").html("<table class='table table-hover'>" + tableHtml.join("") + "</table>");
+	
+	$(".delete-case").each(function(index,item){
+		$(item).click(function(e){
+			var cid = $(this).parent().data("cid");
+			deleteCaseID = cid;
+			deleteTRElement = $(this);
+			$("#deleteModal").modal();
+			e.preventDefault();
+		});
+	});
+}
+
+$("#delete-sure-btn").click(function(){
+	$.ajax({
+		url : "/api/delete_case.json",
+		dataType : "json",
+		data : {cid : deleteCaseID,t :(+new Date())},
+		success : function(data){
+			if(data.status === 0){
+				deleteTRElement.parent().parent().hide("slow");
+				$("#deleteModal").modal("hide");
+			}else{
+				monitor.util.showFailAlert(data.error);
+			}
+		}
+	});	
+});
+
+
+function bindPagerEvent(){
+	var pn;
+	$(".pagers").click(function(e){
+		var target = e.target;
+		if(target.nodeName.toLowerCase() === "a"){
+			if(target.parentNode.className === "active" || target.parentNode.className === "disabled"){
+				e.preventDefault();
+				return;
+			}
+			pn = parseInt($(target).data("pn"),10);
+			window.location.hash = "#pn=" + pn;
+			getCaseList(pn,callback);
+			e.preventDefault();
+		}
+	});
+}
+
+bindPagerEvent();
+
+function getCaseList(pn,callback){
+	$.ajax({
+		url : "/api/get_cases.json",
+		dataType : "json",
+		data : {pn : pn,rn : pageNums,uid : loginUserID,t : (+new Date())},
+		success : function(data){
+			if(data.status !== 0){
+				monitor.util.showFailAlert(data.error);
+				return;
+			}
+			callback && callback(pn,data);
+		},
+		error : function(){
+			monitor.util.showFailAlert("发生未知错误，似乎是500");
+		}
+	});
+}
+
+
+var hash = window.location.hash.replace("#","");
+var pn = 1;
+var title = "";
+var urlHashs = hash.split("=");
+if(urlHashs[0] == "pn"){
+	pn = parseInt(urlHashs[1],10);
+	getCaseList(pn,callback);
+}else if(urlHashs[0] == "title"){
+	title = urlHashs[1];
+	title && $("#search-text").val(title) && handleSearch();
+}else{
+	getCaseList(pn,callback);
+}
+
+function callback(pn,json){
+	if(json.data.length){
+		buildCaseTable(json);
+		buildPagers(pn,json);
+		bindSwitchEvent();
+	}
+}
+
+function handleSearch(){
+	var title = $.trim($("#search-text").val());
+	if(!title){
+		window.location.hash = "";
+		document.location.reload(true);
+	}
+
+	window.location.hash = "#title=" + title;
+	
+	$.ajax({
+		url : "api/get_cases_by_title.json",
+		dataType : "json",
+		data : {uid : loginUserID,title : title,t : (+new Date())},
+		success : function(data){
+			if(data.status !== 0){
+				monitor.util.showFailAlert(data.error);
+				return;
+			}
+			if(data.data.length === 0){
+				hideRunAllCaseButton();
+			}else{
+				buildCaseTable(data);
+				bindSwitchEvent();
+				$(".pagers").html("");
+			}
+		}
+	});
+}
+
+$("#search-btn").click(handleSearch);
+$("#search-text").keyup(function(e){
+	if(e.keyCode === 13){
+		handleSearch();
+	}
+});
+
+function bindSwitchEvent(){
+	$(".case-switch").each(function(index,item){
+		$(item).click(function(e){
+			var sw = $(this).data("switch");
+			var cid = $(this).parent().data("cid");
+			var msg = (sw == "1") ? "开启" : "关闭";
+			sw = (sw == "1") ? "0" : "1";
+			$.ajax({
+				url : "api/update_case_switch.json",
+				dataType : "json",
+				data : {cid:cid,sw:sw,t:(+new Date())},
+				success : function(json){
+					if(json.status === 0){
+						monitor.util.showSuccessAlert("已" + msg + "该单测",function(){
+							document.location.reload(false);
+						});
+					}else{
+						monitor.util.showFailAlert(json.error);
+					}
+				}
+			});
+			e.preventDefault();
+		});
+	});	
+}
+</script>
+{% endblock %}
+

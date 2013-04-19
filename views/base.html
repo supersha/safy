@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %}_Safy</title>
+    <link rel="shortcut icon", href="/img/favicon.png">
+    <link rel="stylesheet", href="/css/bootstrap.min.css">
+    <link rel="stylesheet", href="/css/bootstrap-responsive.min.css">
+    <link rel="stylesheet", href="/css/bootswatch.css">
+    <link rel="stylesheet", href="/css/common.css">
+    <link rel="stylesheet", href="/css/hint.min.css">
+    {% block head_style %}{% endblock %}
+    {% block head_script %}{% endblock %}
+<body>
+    {% block head %}{% endblock %}
+    {% block content %}{% endblock %}
+    {% block foot %} {% endblock %}
+    <script src="/js/jquery-1.8.2.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/common.js"></script>
+    {% block foot_script %}{% endblock %}
+</body>
+</html>

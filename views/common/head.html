@@ -1,0 +1,48 @@
+{% macro activePage page type %}
+    {% set activeClass = "" %}
+    {% if page == type %}
+        {% set activeClass = "active" %}
+    {% endif %}
+    <li class="{{ activeClass }}">
+{% endmacro %}
+
+
+<div class="navbar navbar-fixed-top">
+	<div class="navbar-inner">
+        <div class="container">
+        	<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            	<span class="icon-bar"></span>
+            	<span class="icon-bar"></span>
+            	<span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="/">Safy<span class="ver">3.2</span></a>
+            <div class="nav-collapse collapse">
+            	<ul class="nav">
+            		{{ activePage(page,"index") }}<a href="/">首页</a></li>
+                	{{ activePage(page,"create") }}<a href="/create">创建单测</a></li>
+                	{{ activePage(page,"list") }}<a href="/list">单测列表</a></li>
+                	{{ activePage(page,"result") }}<a href="/result">测试结果</a></li>
+                    {{ activePage(page,"tool") }}<a href='/tool'>工具箱</a></li>
+                	{{ activePage(page,"doc") }}<a href='/doc'>接口文档</a></li>
+                	{{ activePage(page,"help") }}<a href='/help'>帮助</a></li>
+                </ul>
+
+                <div class="btn-group">
+                    <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-user icon-black"></i> {{ passport.user }} <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/reg?user={{ passport.user }}"><i class="icon-edit"></i> 编辑</a></li>
+                        <li><a href="/loginout"><i class="icon-remove-sign"></i> 退出</a></li>
+                    </ul>
+                </div>
+
+                {% if page == "list"%}
+                <div class="input-append case-search">
+                    <input class="span2" id="search-text" autocomplete="off" type="text">
+                    <button class="btn" id="search-btn" type="button">搜索</button>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>

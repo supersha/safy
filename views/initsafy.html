@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}初始化{% endblock %}
+
+{% block head_style %}
+<style type="text/css">
+body {padding-top: 40px;padding-bottom: 40px;}
+
+.form-signin {max-width: 300px;padding: 19px 29px 29px;margin: 0 auto 20px;background-color: #fff;border: 1px solid #e5e5e5;-webkit-border-radius: 5px;-moz-border-radius: 5px;
+            border-radius: 5px;-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);-moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);box-shadow: 0 1px 2px rgba(0,0,0,.05);}
+.form-signin .form-signin-heading,.form-signin .checkbox {margin-bottom: 10px;}
+.form-signin input[type="text"],.form-signin input[type="password"] {font-size: 16px;height: auto;margin-bottom: 10px;padding: 7px 9px;}
+.alert{z-index:10000;display:none;position:fixed;top:0;padding-right:14px;-moz-border-radius:0;-webkit-border-radius:0;border-radius:0;}
+#btn{margin-top:15px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="alert">
+        <span class="alert-content"></span>
+    </div>
+    <form class="form-signin">
+    	<h2 class="form-signin-heading">初始化Safy系统</h2>
+    	<p class="muted">Mysql配置</p>
+    	<input type="text" class="input-block-level" autocomplete="off" id="host" placeholder="Host: localhost">
+    	<input type="text" class="input-block-level" id="user" placeholder="User">
+    	<input type="text" class="input-block-level" id="password" placeholder="Password">
+    	<input type="text" class="input-block-level" id="database" placeholder="Database Name">
+    	<p style='border-bottom:1px dotted #ccc;margin:10px 0 15px;'></p>
+    	<p class="muted">Safy访问域名配置</p>
+    	<input type="text" class="input-block-level" id="site" placeholder="localhost">
+    	<input type="text" class="input-block-level" id="port" placeholder="3000">
+
+    	<button class="btn btn-primary btn-block" id="btn" type="button">确定</button>
+  </form>
+</div>
+{% endblock %}
+
+
+{% block foot_script %}
+<script>
+function handleInitSafy(){
+	var host = $.trim($("#host").val()) || "localhost",
+		user = $.trim($("#user").val()),
+		password = $.trim($("#password").val()),
+		database = $.trim($("#database").val()),
+		site = $.trim($("#site").val()) || "localhost",
+		port = $.trim($("#port").val()) || 80;
+		
+	if(!user || !database){
+		monitor.util.showFailAlert("请填写完整的初始化信息");
+		return;
+	}
+
+	$.ajax({
+		url : "/api/init_safy.json",
+		dataType : "json",
+		data : {user : user,password : password,host : host,database : database,site : site, port : port},
+		success : function(json){
+			if(json.status === 0){
+					monitor.util.showSuccessAlert("初始化成功...",function(){
+					setTimeout(function(){
+						window.location.href = "/";
+					},1000);
+				});
+			}else{
+				monitor.util.showFailAlert(json.error);
+			}
+		}
+	});
+}
+
+$(window).load(function(){
+	$("#host").focus();
+});
+
+$("#btn").click(handleInitSafy);
+</script>
+
+{% endblock %}

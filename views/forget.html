@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}忘记密码{% endblock %}
+
+{% block head_style %}
+    <style type="text/css">
+      body {
+        padding-top: 40px;
+        padding-bottom: 40px;
+        background: #f5f5f5 url(/img/light_wool.png);
+      }
+
+      .form-signin {
+        max-width: 300px;
+        padding: 19px 29px 29px;
+        margin: 0 auto 20px;
+        background-color: #fff;
+        border: 1px solid #e5e5e5;
+        -webkit-border-radius: 5px;
+           -moz-border-radius: 5px;
+                border-radius: 5px;
+        -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+           -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+                box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      }
+      .form-signin .form-signin-heading,
+      .form-signin .checkbox {
+        margin-bottom: 10px;
+      }
+      .form-signin input[type="text"],
+      .form-signin input[type="password"] {
+        font-size: 16px;
+        height: auto;
+        margin-bottom: 15px;
+        padding: 7px 9px;
+      }
+      
+.alert{z-index:10000;display:none;position:fixed;top:0;padding-right:14px;-moz-border-radius:0;-webkit-border-radius:0;border-radius:0;}
+
+
+.result{display:none;}
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="alert">
+          <span class="alert-content"></span>
+    </div>
+  <form class="form-signin">
+      <h2 class="form-signin-heading">找回密码</h2>
+
+      <input type="text" class="input-block-level" autocomplete="off" id="username" placeholder="User name">
+      <p class='result'>找回来了，你的密码是：<span class='label label-info' id='password'></span></p>
+      <button class="btn btn-primary" id="btn" type="button">我特么要找回密码</button>
+  </form>
+
+</div> 
+{% endblock %}
+
+
+{% block foot_script %}
+<script>
+$("#btn").click(function(){
+    var name = $.trim($("#username").val());
+    if(!name){
+        $("#username").focus();
+        return;
+    }
+
+    $.ajax({
+        url : "/api/get_password_by_name.json?name=" + encodeURIComponent(name),
+        dataType : "json",
+        success : function(json){
+            if(json.status !== 0){
+                $(".result").hide();
+                monitor.util.showFailAlert(json.error);
+                return;
+            }
+
+            $(".result").show();
+            $("#password").html(json.data[0].password);
+        }
+    })
+});
+
+</script>
+{% endblock %}
+
+

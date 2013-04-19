@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if isEdit %}编辑个人信息{% else %}注册{% endif %}
+{% endblock %}
+
+{% block head_style %}
+<style type="text/css">
+body {padding-top: 40px;padding-bottom: 40px;}
+
+.form-signin {max-width: 300px;padding: 19px 29px 29px;margin: 0 auto 20px;background-color: #fff;border: 1px solid #e5e5e5;-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px;-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);-moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);box-shadow: 0 1px 2px rgba(0,0,0,.05);}
+.form-signin .form-signin-heading,.form-signin .checkbox {margin-bottom: 10px;}
+.form-signin input[type="text"],.form-signin input[type="password"] {font-size: 16px;height: auto;margin-bottom: 15px;padding: 7px 9px;}
+.alert{z-index:10000;display:none;position:fixed;top:0;padding-right:14px;-moz-border-radius:0;-webkit-border-radius:0;border-radius:0;}
+.login{margin-left:20px;}
+</style>
+{% endblock %}
+
+{% block head_script %}
+<!--[if lt IE 9]>
+	<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="alert">
+          <span class="alert-content"></span>
+    </div>
+    <form class="form-signin">
+    	<h2 class="form-signin-heading">{% if isEdit %}编辑个人信息{% else %}注册到Safy系统{% endif %}</h2>
+    	<input type="hidden" id="edit" value="{% if isEdit %}true{% endif %}">
+    	<input type="text" autocomplete="off" id="username" {% if isEdit %}disabled="disabled"{% endif %} value="{{ userData.user }}" class="input-block-level" placeholder="User name">
+    	<input type="password" id="password" value="{{ userData.password }}" class="input-block-level" placeholder="Password">
+    	<input type="text" autocomplete="off" id="email" value="{{ userData.email }}" class="input-block-level" placeholder="Email">
+    	<button class="btn btn-primary" id="btn" type="button">{% if isEdit %}编辑{% else %}注册{% endif %}</button> {% if isEdit %}<button type="button" onclick='window.history.back();' class="btn btn-small">取消</button>{% endif %} <a href='/login' class="login">登录</a>
+  	</form>
+</div>
+{% endblock %}
+
+
+{% block foot_script %}
+<script src="/js/jquery-1.8.2.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/common.js"></script>
+
+<script>
+
+var loginUser = "{{ passport['user'] }}";
+
+
+$("#btn").click(function(){
+
+	var username = $.trim($("#username").val()),
+		password = $.trim($("#password").val()),
+		email = $.trim($("#email").val()),
+		edit = $("#edit").val();
+
+	if(!username || !password || !email){
+		monitor.util.showFailAlert("请填写完整的注册信息");
+		return;
+	}
+
+	$.ajax({
+		url : "/api/add_user.json",
+		dataType : "json",
+		data : { user : username,password : password,email : email,edit : edit,t : (+new Date()) },
+		success:function(data){
+			if(data.status === 0){
+				var msg = loginUser ? "编辑成功，正在往回跳..." : "注册成功，正在跳往系统中心...";
+				monitor.util.showSuccessAlert(msg,function(){
+					if(loginUser){
+						window.history.back();
+					}else{
+						monitor.util.cookie.set("uname",username);
+						monitor.util.cookie.set("uid",data.uid);
+						window.location.href = "/";	
+					}
+				});
+			}else{
+				monitor.util.showFailAlert(data.error);
+			}
+		}
+	});
+});
+
+$(window).load(function(){
+	$("#username").focus();
+});
+</script>
+{% endblock %}
+

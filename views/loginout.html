@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="shortcut icon" href="/img/favicon.ico" >
+<title>退出_Safy</title>
+<style>
+body{font-size:13px;}
+</style>
+</head>
+
+<body>
+<p>你已退出，正在前往登陆页面...</p>
+<script src="/js/common.js"></script>
+<script>
+monitor.util.cookie.remove("uname");
+monitor.util.cookie.remove("uid");
+setTimeout(function(){
+	window.location.href="/login";
+}, 1000);
+</script>
+</body>
+</html>
