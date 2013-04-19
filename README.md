@@ -12,3 +12,7 @@ npm install <br>
 node index.js
 
 然后浏览给定的端口号下的localhost服务，比如：http://localhost:3000
+
+### 一点点说明：
+
+系统第一次运行的时候，需要配置Mysql信息，host、user、password、database(这个自定义，会自动创建)
