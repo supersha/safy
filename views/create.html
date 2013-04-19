@@ -73,7 +73,7 @@ div.grippie {background:#f9f9f9 url(/img/grippid.png) no-repeat scroll center 2p
 
 <p data-step="1" data-intro="这里填写单侧标题描述" data-position="right"><label for="title">标题描述:</label><input autocomplete="off" value="{{ caseData.title }}" placeholder="title" type="text" name="title" id="title" class="txt"></p>
 
-<p style="position:relative;" data-step="2" data-intro="这里填写测试页面的URL，如果是URL测试的单侧，<br>必须要填写；通用测试和阿拉丁的可以不用填写" data-position="bottom"><label for="url">单测页面:</label><input autocomplete="off" placeholder="url" value="{{ caseData.url }}" type="text" name="url" id="url" class="txt"> <a href='javascript:void(0)' id="get_record_btn"> <i class='icon-circle-arrow-right'></i></a></p>
+<p style="position:relative;" data-step="2" data-intro="这里填写测试页面的URL，如果是URL测试的单侧，<br>必须要填写；通用测试的可以不用填写" data-position="bottom"><label for="url">单测页面:</label><input autocomplete="off" placeholder="url" value="{{ caseData.url }}" type="text" name="url" id="url" class="txt"> <a href='javascript:void(0)' id="get_record_btn"> <i class='icon-circle-arrow-right'></i></a></p>
 
 <p data-step="4" data-intro="这里选择测试平台，一般输入URL后能够自动识别平台" data-position="right"><label>测试平台:</label><select id="device" name="device">
 <option {% if caseData.device == "1" %}selected='selected'{% endif %} value="1">PC</option>
@@ -105,7 +105,7 @@ div.grippie {background:#f9f9f9 url(/img/grippid.png) no-repeat scroll center 2p
 </div>
 
 <div class="span6 code-container-span">
-<div class="editor-box resizable" data-step="11" data-intro="这里就是输入单侧代码的地方，提供了有各种单侧API以及工具供使用，API请访问“<a href='/api' target='_blank'>Safy API</a>”查看文档。这里的单侧代码使用的都是JS代码，可以写原生的JS代码去验证指定模板名的阿拉丁或者页面的功能和效果，也可以通过录制工具(在“单侧页面”中输入URL，即可看到一个点击按钮icon，就可以使用)生成的代码直接运行" data-position="bottom">
+<div class="editor-box resizable" data-step="11" data-intro="这里就是输入单侧代码的地方，提供了有各种单侧API以及工具供使用，API请访问“<a href='/api' target='_blank'>Safy API</a>”查看文档。这里的单侧代码使用的都是JS代码，可以写原生的JS代码去验证指定页面的功能和效果，也可以通过录制工具(在“单侧页面”中输入URL，即可看到一个点击按钮icon，就可以使用)生成的代码直接运行" data-position="bottom">
 	<div id="editor"></div>
 </div>
 <p class="embel-link">
