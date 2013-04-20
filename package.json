@@ -1,16 +1,16 @@
 {
-  "name": "application-name",
+  "name": "Safy",
   "version": "0.0.1",
-  "private": true,
+  "author" : "supersha",
   "scripts": {
-    "start": "node app.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "3.1.1",
     "mysql" : "2.0.0-alpha7",
     "consolidate" : "0.9.0",
     "swig" : "0.13.5",
-	  "async" : "0.2.6",
+    "async" : "0.2.6",
     "bufferhelper" : "0.2.0",
     "socket.io" : "0.9.14",
     "iconv-lite" : "0.2.7"
