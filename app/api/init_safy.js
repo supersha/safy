@@ -11,7 +11,7 @@ exports.showPage = function(req,res){
 		site = req.query.site,
 		port = req.query.port;
 
-	var filepath = "./lib/setting.js";
+	var filepath = "./app/setting.js";
 
 	var data = {
 		mysql : {
